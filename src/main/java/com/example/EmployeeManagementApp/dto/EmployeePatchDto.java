@@ -1,7 +1,7 @@
 package com.example.EmployeeManagementApp.dto;
 
 import com.example.EmployeeManagementApp.constants.Department;
-import com.example.EmployeeManagementApp.dto.request.QualificationDTO;
+import com.example.EmployeeManagementApp.dto.request.EmployeeQualificationDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +21,6 @@ public class EmployeePatchDto {
     private Double salary;
     private LocalDate hireDate;
     private Integer experience;
-    private List<QualificationDTO> qualifications;
+    private List<EmployeeQualificationDTO> qualifications;
     private List<String> skills;
 }

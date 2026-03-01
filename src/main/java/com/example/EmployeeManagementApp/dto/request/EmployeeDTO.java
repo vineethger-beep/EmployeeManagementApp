@@ -25,6 +25,6 @@ public class EmployeeDTO {
     private LocalDate hireDate;
     private Integer experience;
 
-    private List<QualificationDTO> qualifications;
+    private List<EmployeeQualificationDTO> qualifications;
     private List<String> skills;
 }

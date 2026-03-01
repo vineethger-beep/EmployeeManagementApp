@@ -2,6 +2,8 @@ package com.example.EmployeeManagementApp.repository;
 
 import com.example.EmployeeManagementApp.constants.Department;
 import com.example.EmployeeManagementApp.entity.Employee;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,9 +26,10 @@ public interface EmployeeRepository extends JpaRepository<Employee,Long> {
                         )
                       )
 """)
-    List<Employee> findWithFilters(@Param("department") Department department,
+    Page<Employee> findWithFilters(@Param("department") Department department,
                                    @Param("experience") Integer experience,
-                                   @Param("skills") List<String> skills);
+                                   @Param("skills") List<String> skills,
+                                   Pageable pageable);
 
     boolean existsByEmail(String email);
 }

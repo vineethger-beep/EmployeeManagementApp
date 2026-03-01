@@ -7,11 +7,15 @@ import com.example.EmployeeManagementApp.dto.response.BatchProcessResponse;
 import com.example.EmployeeManagementApp.dto.response.EmployeeResponseDto;
 import com.example.EmployeeManagementApp.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.example.EmployeeManagementApp.util.StatusMessages.*;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -30,7 +34,7 @@ public class EmployeesController {
         ApiResponse<BatchProcessResponse> response =
                 ApiResponse.<BatchProcessResponse>builder()
                         .statusCode(HttpStatus.CREATED.value())
-                        .message("Employees saved successfully")
+                        .message(EMPLOYEES_SAVED)
                         .data(batchProcessResponse)
                         .build();
 
@@ -40,23 +44,24 @@ public class EmployeesController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EmployeeResponseDto>>> getFiltered(
+    public ResponseEntity<ApiResponse<Page<EmployeeResponseDto>>> getFiltered(
             @RequestParam(required = false) Department department,
             @RequestParam(required = false) Integer experience,
-            @RequestParam(required = false) List<String> skills) {
+            @RequestParam(required = false) List<String> skills,
+            Pageable pageable) {
 
-        List<EmployeeResponseDto> employees =
-                employeeService.findWithFilters(department, experience, skills);
+        Page<EmployeeResponseDto> employees =
+                employeeService.findWithFilters(department, experience, skills, pageable);
 
-        ApiResponse<List<EmployeeResponseDto>> response =
-                ApiResponse.<List<EmployeeResponseDto>>builder()
+        ApiResponse<Page<EmployeeResponseDto>> response =
+                ApiResponse.<Page<EmployeeResponseDto>>builder()
                         .statusCode(HttpStatus.OK.value())
-                        .message("Employees fetched successfully")
+                        .message(EMPLOYEES_FETCHED_SUCCESSFULLY)
                         .data(employees)
                         .build();
 
         return ResponseEntity
-                .ok(response);
+                .ok().body(response);
     }
 
     @DeleteMapping("/{id}")
@@ -68,28 +73,22 @@ public class EmployeesController {
         ApiResponse<Void> response =
                 ApiResponse.<Void>builder()
                         .statusCode(HttpStatus.OK.value())
-                        .message("Employee deleted successfully")
+                        .message(EMPLOYEE_DELETED)
                         .data(null)
                         .build();
 
         return ResponseEntity.ok(response);
     }
 
-//    @PatchMapping("/{id}")
-//    public ResponseEntity<ApiResponse<EmployeeResponseDto>> patchEmployee(
-//            @PathVariable Long id,
-//            @RequestBody EmployeePatchDto dto) {
-//
-//        EmployeeResponseDto updated =
-//                employeeService.patchEmployee(id, dto);
-//
-//        ApiResponse<EmployeeResponseDto> response =
-//                ApiResponse.<EmployeeResponseDto>builder()
-//                        .statusCode(HttpStatus.OK.value())
-//                        .message("Employee updated successfully")
-//                        .data(updated)
-//                        .build();
-//
-//        return ResponseEntity.ok(response);
-//    }
+    @PutMapping
+    public ResponseEntity<ApiResponse<EmployeeResponseDto>> updateEmployee(@PathVariable Long id,
+                                                                           @RequestBody EmployeeDTO dto) {
+        EmployeeResponseDto employeeResponseDto = employeeService.updateEmployee(id, dto);
+        ApiResponse<EmployeeResponseDto> response = ApiResponse.<EmployeeResponseDto>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message(EMPLOYEE_UPDATED)
+                .data(null)
+                .build();
+        return ResponseEntity.ok().body(response);
+    }
 }

@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Table(name = "employee_qualifications")
 @Builder
-public class Qualification {
+public class EmployeeQualification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

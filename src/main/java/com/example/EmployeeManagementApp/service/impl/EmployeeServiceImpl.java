@@ -2,17 +2,19 @@ package com.example.EmployeeManagementApp.service.impl;
 
 import com.example.EmployeeManagementApp.constants.Department;
 import com.example.EmployeeManagementApp.dto.request.EmployeeDTO;
-import com.example.EmployeeManagementApp.dto.request.QualificationDTO;
+import com.example.EmployeeManagementApp.dto.request.EmployeeQualificationDTO;
 import com.example.EmployeeManagementApp.dto.response.BatchProcessResponse;
 import com.example.EmployeeManagementApp.dto.response.EmployeeResponseDto;
 import com.example.EmployeeManagementApp.dto.response.FailedRecordDetails;
 import com.example.EmployeeManagementApp.entity.Employee;
-import com.example.EmployeeManagementApp.entity.Qualification;
+import com.example.EmployeeManagementApp.entity.EmployeeQualification;
 import com.example.EmployeeManagementApp.repository.EmployeeRepository;
 import com.example.EmployeeManagementApp.service.EmployeeService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,6 +25,8 @@ import java.util.List;
 public class EmployeeServiceImpl implements EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+
+    private final EmployeeHelperService employeeHelperService;
 
 
 
@@ -61,7 +65,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<EmployeeResponseDto> saveChunkTransactional(List<EmployeeDTO> chunk) {
         List<Employee> entities = chunk.stream().map(this::mapToEntity).toList();
         List<Employee> saved = employeeRepository.saveAll(entities);
-        return saved.stream().map(this::mapToResponseDto).toList();
+        return saved.stream().map(employeeHelperService::mapToResponseDto).toList();
     }
 
     private void processIndividualErrors(List<EmployeeDTO> chunk,
@@ -71,7 +75,7 @@ public class EmployeeServiceImpl implements EmployeeService {
             try {
                 // Individual save to isolate the error
                 Employee saved = employeeRepository.save(mapToEntity(dto));
-                successList.add(mapToResponseDto(saved));
+                successList.add(employeeHelperService.mapToResponseDto(saved));
             } catch (Exception e) {
                 failList.add(new FailedRecordDetails(dto, e.getMessage()));
             }
@@ -89,11 +93,11 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .hireDate(dto.getHireDate())
                 .build();
 
-        List<Qualification> qualifications = dto.getQualifications().stream()
-                .map(qDto -> Qualification.builder()
-                        .qualification(qDto.getDegreeName())
+        List<EmployeeQualification> qualifications = dto.getQualifications().stream()
+                .map(qDto -> EmployeeQualification.builder()
+                        .qualification(qDto.getQualification())
                         .institution(qDto.getInstitution())
-                        .year(qDto.getYearOfPassing())
+                        .year(qDto.getYear())
                         .employee(employee) // Link child to parent
                         .build())
                 .toList();
@@ -102,33 +106,14 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employee;
     }
 
-    private EmployeeResponseDto mapToResponseDto(Employee entity) {
-        return EmployeeResponseDto.builder()
-                .id(entity.getId())
-                .skills(entity.getSkills())
-                .phone(entity.getPhone())
-                .salary(entity.getSalary())
-                .hireDate(entity.getHireDate())
-                .experience(entity.getExperience())
-                .name(entity.getName())
-                .email(entity.getEmail())
-                .department(entity.getDepartment())
-                .qualifications(entity.getQualifications().stream()
-                        .map(q -> QualificationDTO.builder()
-                                .degreeName(q.getQualification())
-                                .institution(q.getInstitution())
-                                .yearOfPassing(q.getYear())
-                                .build())
-                        .toList())
-                .build();
-    }
+
 
     private List<EmployeeResponseDto> getEmployeeResponseDtos(List<Employee> savedEmployees) {
         return savedEmployees.stream().map(emp -> {
-            List<QualificationDTO> qDtos = emp.getQualifications().stream()
-                    .map(q -> QualificationDTO.builder()
-                            .degreeName(q.getQualification())
-                            .yearOfPassing(q.getYear())
+            List<EmployeeQualificationDTO> qDtos = emp.getQualifications().stream()
+                    .map(q -> EmployeeQualificationDTO.builder()
+                            .qualification(q.getQualification())
+                            .year(q.getYear())
                             .institution(q.getInstitution())
                             .id(q.getId())
                             .build())
@@ -149,17 +134,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public List<EmployeeResponseDto> findWithFilters(Department department,
-                                                     Integer experience,
-                                                     List<String> skills) {
-       if(skills==null||skills.isEmpty()) {
-           skills = null;
-       }
+    public Page<EmployeeResponseDto> findWithFilters(
+            Department department,
+            Integer experience,
+            List<String> skills,
+            Pageable pageable) {
 
-        List<Employee> employees =
-                employeeRepository.findWithFilters(department, experience, skills);
+        if (skills == null || skills.isEmpty()) {
+            skills = null;
+        }
 
-        return getEmployeeResponseDtos(employees);
+        Page<Employee> employeePage =
+                employeeRepository.findWithFilters(department, experience, skills, pageable);
+
+        return employeePage.map(employeeHelperService::getResponseDtoFromEntity);
     }
 
     private String normalize(String value) {
@@ -191,24 +179,43 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.deleteById(id);
     }
 
-//    @Override
-//    public EmployeeResponseDto patchEmployee(Long id, EmployeePatchDto dto) {
-//
-//        Employee employee = employeeRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Employee not found"));
-//
-//        // Optional: Check unique email
-//        if (dto.getEmail() != null &&
-//                !dto.getEmail().equals(employee.getEmail()) &&
-//                employeeRepository.existsByEmail(dto.getEmail())) {
-//
-//            throw new RuntimeException("Email already exists");
-//        }
-//
-//        employeeMapper.patchEmployee(dto, employee);
-//
-//        Employee saved = employeeRepository.save(employee);
-//
-//        return employeeMapper.toDto(saved);
-//    }
+
+    @Override
+    @Transactional
+    public EmployeeResponseDto updateEmployee(Long id, EmployeeDTO dto) {
+
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        // Simple fields
+        employee.setName(dto.getName());
+        employee.setEmail(dto.getEmail());
+        employee.setPhone(dto.getPhone());
+        employee.setDepartment(dto.getDepartment());
+        employee.setSalary(dto.getSalary());
+        employee.setHireDate(dto.getHireDate());
+        employee.setExperience(dto.getExperience());
+        employee.setSkills(dto.getSkills());
+
+        // Replace qualifications safely
+        employee.getQualifications().clear();
+
+        if (dto.getQualifications() != null) {
+            for (EmployeeQualificationDTO qdto : dto.getQualifications()) {
+
+                EmployeeQualification qualification = new EmployeeQualification();
+
+                qualification.setQualification(qdto.getQualification());
+                qualification.setInstitution(qdto.getInstitution());
+                qualification.setYear(qdto.getYear());
+
+                qualification.setEmployee(employee); // VERY IMPORTANT
+
+                employee.getQualifications().add(qualification);
+            }
+        }
+
+        return employeeHelperService.getResponseDtoFromEntity(employee);
+    }
+
 }

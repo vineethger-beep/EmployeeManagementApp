@@ -40,6 +40,6 @@ public class Employee {
     private List<String> skills = new ArrayList<>();
 
     @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Qualification> qualifications = new ArrayList<>();
+    private List<EmployeeQualification> qualifications = new ArrayList<>();
 
 }

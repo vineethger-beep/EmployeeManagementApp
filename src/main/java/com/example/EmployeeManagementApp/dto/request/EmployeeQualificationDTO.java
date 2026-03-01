@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class QualificationDTO {
+public class EmployeeQualificationDTO {
 
     private Long id;
-    private DegreeType degreeName;
+    private DegreeType qualification;
     private String institution;
-    private Integer yearOfPassing;
+    private Integer year;
 }

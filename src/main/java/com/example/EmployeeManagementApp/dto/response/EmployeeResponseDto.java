@@ -1,12 +1,12 @@
 package com.example.EmployeeManagementApp.dto.response;
 
 import com.example.EmployeeManagementApp.constants.Department;
-import com.example.EmployeeManagementApp.dto.request.QualificationDTO;
+import com.example.EmployeeManagementApp.dto.request.EmployeeQualificationDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -26,5 +26,5 @@ public class EmployeeResponseDto {
     private List<String> skills;
 
     // The "Many" part of the relationship
-    private List<QualificationDTO> qualifications;
+    private List<EmployeeQualificationDTO> qualifications;
 }
