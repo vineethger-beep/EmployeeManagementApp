@@ -80,7 +80,7 @@ public class EmployeesController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<EmployeeResponseDto>> updateEmployee(@PathVariable Long id,
                                                                            @RequestBody EmployeeDTO dto) {
         EmployeeResponseDto employeeResponseDto = employeeService.updateEmployee(id, dto);

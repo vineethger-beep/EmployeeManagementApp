@@ -135,13 +135,10 @@ public class EmployeeServiceImpl implements EmployeeService {
             for (EmployeeQualificationDTO qdto : dto.getQualifications()) {
 
                 EmployeeQualification qualification = new EmployeeQualification();
-
                 qualification.setQualification(qdto.getQualification());
                 qualification.setInstitution(qdto.getInstitution());
                 qualification.setYear(qdto.getYear());
-
                 qualification.setEmployee(employee);
-
                 employee.getQualifications().add(qualification);
             }
         }
