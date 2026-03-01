@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.EmployeeManagementApp.util.StatusMessages.EMPLOYEE_NOT_FOUND;
+
 @Service
 @RequiredArgsConstructor
 public class EmployeeServiceImpl implements EmployeeService {
@@ -63,7 +65,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Transactional
     public List<EmployeeResponseDto> saveChunkTransactional(List<EmployeeDTO> chunk) {
-        List<Employee> entities = chunk.stream().map(this::mapToEntity).toList();
+        List<Employee> entities = chunk.stream().map(employeeHelperService::mapToEntity).toList();
         List<Employee> saved = employeeRepository.saveAll(entities);
         return saved.stream().map(employeeHelperService::mapToResponseDto).toList();
     }
@@ -74,63 +76,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         for (EmployeeDTO dto : chunk) {
             try {
                 // Individual save to isolate the error
-                Employee saved = employeeRepository.save(mapToEntity(dto));
+                Employee saved = employeeRepository.save(employeeHelperService.mapToEntity(dto));
                 successList.add(employeeHelperService.mapToResponseDto(saved));
             } catch (Exception e) {
                 failList.add(new FailedRecordDetails(dto, e.getMessage()));
             }
         }
-    }
-    private Employee mapToEntity(EmployeeDTO dto) {
-        Employee employee = Employee.builder()
-                .name(dto.getName())
-                .skills(dto.getSkills())
-                .email(dto.getEmail())
-                .phone(dto.getPhone())
-                .department(dto.getDepartment())
-                .experience(dto.getExperience())
-                .salary(dto.getSalary())
-                .hireDate(dto.getHireDate())
-                .build();
-
-        List<EmployeeQualification> qualifications = dto.getQualifications().stream()
-                .map(qDto -> EmployeeQualification.builder()
-                        .qualification(qDto.getQualification())
-                        .institution(qDto.getInstitution())
-                        .year(qDto.getYear())
-                        .employee(employee) // Link child to parent
-                        .build())
-                .toList();
-
-        employee.setQualifications(qualifications);
-        return employee;
-    }
-
-
-
-    private List<EmployeeResponseDto> getEmployeeResponseDtos(List<Employee> savedEmployees) {
-        return savedEmployees.stream().map(emp -> {
-            List<EmployeeQualificationDTO> qDtos = emp.getQualifications().stream()
-                    .map(q -> EmployeeQualificationDTO.builder()
-                            .qualification(q.getQualification())
-                            .year(q.getYear())
-                            .institution(q.getInstitution())
-                            .id(q.getId())
-                            .build())
-                    .toList();
-            return EmployeeResponseDto.builder()
-                    .id(emp.getId())
-                    .name(emp.getName())
-                    .department(emp.getDepartment())
-                    .email(emp.getEmail())
-                    .qualifications(qDtos)
-                    .phone(emp.getPhone())
-                    .salary(emp.getSalary())
-                    .hireDate(emp.getHireDate())
-                    .experience(emp.getExperience())
-                    .skills(emp.getSkills())
-                    .build();
-        }).toList();
     }
 
     @Override
@@ -150,30 +101,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employeePage.map(employeeHelperService::getResponseDtoFromEntity);
     }
 
-    private String normalize(String value) {
-        return (value == null || value.isBlank()) ? null : value;
-    }
-
-    @Override
-    public Employee update(Long id, Employee details) {
-        return null;
-    }
-
-    @Override
-    public void delete(Long id) {
-
-    }
-
-    @Override
-    public Employee findById(Long id) {
-        return null;
-    }
-
     @Override
     public void deleteEmployee(Long id) {
 
         if (!employeeRepository.existsById(id)) {
-            throw new RuntimeException("Employee not found with id: " + id);
+            throw new RuntimeException(EMPLOYEE_NOT_FOUND + id);
         }
 
         employeeRepository.deleteById(id);
@@ -187,7 +119,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
-        // Simple fields
         employee.setName(dto.getName());
         employee.setEmail(dto.getEmail());
         employee.setPhone(dto.getPhone());
@@ -197,7 +128,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setExperience(dto.getExperience());
         employee.setSkills(dto.getSkills());
 
-        // Replace qualifications safely
+
         employee.getQualifications().clear();
 
         if (dto.getQualifications() != null) {
@@ -209,7 +140,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 qualification.setInstitution(qdto.getInstitution());
                 qualification.setYear(qdto.getYear());
 
-                qualification.setEmployee(employee); // VERY IMPORTANT
+                qualification.setEmployee(employee);
 
                 employee.getQualifications().add(qualification);
             }

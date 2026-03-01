@@ -1,8 +1,10 @@
 package com.example.EmployeeManagementApp.service.impl;
 
+import com.example.EmployeeManagementApp.dto.request.EmployeeDTO;
 import com.example.EmployeeManagementApp.dto.request.EmployeeQualificationDTO;
 import com.example.EmployeeManagementApp.dto.response.EmployeeResponseDto;
 import com.example.EmployeeManagementApp.entity.Employee;
+import com.example.EmployeeManagementApp.entity.EmployeeQualification;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -58,6 +60,31 @@ public class EmployeeHelperService {
                 .experience(emp.getExperience())
                 .skills(emp.getSkills())
                 .build();
+    }
+
+    public Employee mapToEntity(EmployeeDTO dto) {
+        Employee employee = Employee.builder()
+                .name(dto.getName())
+                .skills(dto.getSkills())
+                .email(dto.getEmail())
+                .phone(dto.getPhone())
+                .department(dto.getDepartment())
+                .experience(dto.getExperience())
+                .salary(dto.getSalary())
+                .hireDate(dto.getHireDate())
+                .build();
+
+        List<EmployeeQualification> qualifications = dto.getQualifications().stream()
+                .map(qDto -> EmployeeQualification.builder()
+                        .qualification(qDto.getQualification())
+                        .institution(qDto.getInstitution())
+                        .year(qDto.getYear())
+                        .employee(employee) // Link child to parent
+                        .build())
+                .toList();
+
+        employee.setQualifications(qualifications);
+        return employee;
     }
 
 

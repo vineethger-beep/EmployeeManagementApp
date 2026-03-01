@@ -12,7 +12,7 @@ public final class StatusMessages {
     public static final String EMPLOYEE_DELETED =
             "Employee deleted successfully.";
     public static final String EMPLOYEE_NOT_FOUND =
-            "Employee not found.";
+            "Employee not found with id: ";
     public static final String EMPLOYEES_FETCHED_SUCCESSFULLY =
             "Employees fetched successfully.";
 
